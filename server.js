@@ -193,5 +193,81 @@ app.get('/', (req, res) => {
   });
 });
 
+// Store for active sessions
+const sessions = new Map();
+
+// Endpoint to set active workflow and repository
+app.post('/set-context', (req, res) => {
+  const { workflow, owner, repo } = req.body;
+  const sessionId = Date.now().toString(); // Simple session ID generation
+
+  if (!workflow || !owner || !repo) {
+    return res.status(400).json({ error: 'Workflow, owner, and repo are required.' });
+  }
+
+  sessions.set(sessionId, {
+    workflow,
+    owner,
+    repo,
+    created: new Date()
+  });
+
+  res.json({ 
+    sessionId,
+    message: 'Context set successfully',
+    context: sessions.get(sessionId)
+  });
+});
+
+// Endpoint to interact with AI using the set context
+app.post('/ai-interact', async (req, res) => {
+  const { sessionId, message } = req.body;
+  
+  if (!sessionId || !message) {
+    return res.status(400).json({ error: 'Session ID and message are required.' });
+  }
+
+  const session = sessions.get(sessionId);
+  if (!session) {
+    return res.status(404).json({ error: 'Session not found. Please set context first.' });
+  }
+
+  try {
+    // Get workflow content
+    const workflowPath = path.join(__dirname, session.workflow);
+    const workflowContent = require('fs').readFileSync(workflowPath, 'utf8');
+
+    // Get repository content via GitHub API
+    const repoResponse = await axios.get(
+      `${GITHUB_API_BASE_URL}/repos/${session.owner}/${session.repo}/contents`,
+      { headers: githubHeaders }
+    );
+
+    // Create context object for AI interaction
+    const context = {
+      workflow: {
+        name: session.workflow,
+        content: workflowContent
+      },
+      repository: {
+        owner: session.owner,
+        name: session.repo,
+        contents: repoResponse.data
+      },
+      userMessage: message
+    };
+
+    // Here you would typically send this context to your AI service
+    // For now, we'll return the structured context
+    res.json({
+      message: 'Context prepared for AI interaction',
+      context: context
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to prepare AI interaction context.' });
+  }
+});
+
 // Start the server with port fallback mechanism
 startServer(ports[currentPortIndex]);
