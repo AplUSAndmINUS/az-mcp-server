@@ -1,123 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MCP Server Workflow Manager</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <style>
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
+      pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      select.form-select {
+        cursor: pointer;
+      }
+      select.form-select option {
+        cursor: pointer;
+        padding: 8px;
+      }
+      select.form-select option:hover {
+        background-color: #f8f9fa;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container mt-5">
-        <h1 class="mb-4">MCP Server Workflow Manager</h1>
-        
-        <!-- Workflow Selection -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Select Workflow</h5>
-            </div>
-            <div class="card-body">
-                <select id="workflowSelect" title="workflow-select" class="form-select mb-3">
-                    <option value="">Choose a workflow...</option>
-                </select>
-                <button id="runWorkflow" class="btn btn-primary">Run Workflow</button>
-            </div>
+      <h1 class="mb-4">MCP Server Workflow Manager</h1>
+
+      <!-- Workflow Selection -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Select Workflow</h5>
+        </div>
+        <div class="card-body">
+          <select
+            id="workflowSelect"
+            title="workflow-select"
+            class="form-select mb-3"
+          >
+            <option value="">Choose a workflow...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- GitHub Repository Section -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">GitHub Repository</h5>
+        </div>
+        <div class="card-body">
+          <label for="repoSelect" class="form-label">Select Repository</label>
+          <select
+            id="repoSelect"
+            title="repository-select"
+            class="form-select mb-3"
+          >
+            <option value="">Choose a repository...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Run Workflow Button -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Run Workflow</h5>
+        </div>
+        <div class="card-body">
+          <p class="card-text">
+            Click the button below to run the selected workflow on the chosen
+            repository.
+          </p>
         </div>
 
-        <!-- GitHub Repository Section -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title mb-0">GitHub Repositories</h5>
-            </div>
-            <div class="card-body">
-                <button id="listRepos" class="btn btn-secondary mb-3">List Repositories</button>
-                <div id="reposList" class="list-group">
-                    <!-- Repositories will be listed here -->
-                </div>
-            </div>
-        </div>
+        <button
+          id="runWorkflow"
+          title="run-workflow"
+          class="btn btn-primary w-25"
+        >
+          Run Workflow
+        </button>
+      </div>
 
-        <!-- Results Section -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Results</h5>
-            </div>
-            <div class="card-body">
-                <pre id="results" class="bg-light p-3 rounded"></pre>
-            </div>
+      <!-- Results Section -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Results</h5>
         </div>
+        <div class="card-body">
+          <pre id="results" class="bg-light p-3 rounded"></pre>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
-        // Fetch and populate workflows
-        async function fetchWorkflows() {
-            try {
-                const response = await axios.get('/workflows');
-                const select = document.getElementById('workflowSelect');
-                response.data.workflows.forEach(workflow => {
-                    const option = document.createElement('option');
-                    option.value = workflow;
-                    option.textContent = workflow;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error fetching workflows:', error);
-            }
+      // Variables
+      const textResults = document.getElementById("results");
+      const workflowSelect = document.getElementById("workflowSelect");
+      const repoSelect = document.getElementById("repoSelect");
+      const runWorkflowButton = document.getElementById("runWorkflow");
+
+      // Fetch and populate workflows
+      async function fetchWorkflows() {
+        try {
+          const response = await axios.get("/workflows");
+          response.data.workflows.forEach((workflow) => {
+            const option = document.createElement("option");
+            option.value = workflow;
+            option.textContent = workflow;
+            workflowSelect.appendChild(option);
+          });
+        } catch (error) {
+          console.error("Error fetching workflows:", error);
+        }
+      }
+
+      // Update results area with current selections
+      function updateSelections() {
+        const workflow = workflowSelect.value;
+        const repo = repoSelect.value;
+        let status = "Current Selections:\n";
+        status += workflow
+          ? `Workflow: ${workflow}\n`
+          : "No workflow selected\n";
+        status += repo ? `Repository: ${repo}` : "No repository selected";
+        textResults.textContent = status;
+      }
+
+      // Show loading state
+      function setLoading(isLoading) {
+        runWorkflowButton.disabled = isLoading;
+        runWorkflowButton.innerHTML = isLoading
+          ? '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Running...'
+          : "Run Workflow";
+      }
+
+      // Fetch and populate repositories
+      async function fetchRepositories() {
+        try {
+          repoSelect.disabled = true;
+          const response = await axios.get("/github/repos");
+          repoSelect.innerHTML =
+            '<option value="">Choose a repository...</option>';
+
+          response.data.forEach((repo) => {
+            const option = document.createElement("option");
+            option.value = repo.full_name;
+            option.textContent = repo.full_name;
+            repoSelect.appendChild(option);
+          });
+        } catch (error) {
+          console.error("Error fetching repositories:", error);
+          textResults.textContent =
+            "Error: " + error.response?.data?.error || error.message;
+          textResults.classList.add("text-danger");
+        } finally {
+          repoSelect.disabled = false;
+        }
+      }
+
+      // Run workflow with selected repository
+      async function runWorkflow() {
+        const workflow = workflowSelect.value;
+        const repo = repoSelect.value;
+
+        if (!workflow || !repo) {
+          textResults.classList.add("text-danger");
+          textResults.textContent =
+            "Please select both a workflow and a repository";
+          return;
         }
 
-        // Run selected workflow
-        async function runWorkflow() {
-            const workflow = document.getElementById('workflowSelect').value;
-            if (!workflow) {
-                alert('Please select a workflow');
-                return;
-            }
-
-            try {
-                const response = await axios.post('/run-workflow', { workflow });
-                document.getElementById('results').textContent = 
-                    JSON.stringify(response.data, null, 2);
-            } catch (error) {
-                console.error('Error running workflow:', error);
-                document.getElementById('results').textContent = 
-                    'Error: ' + error.response?.data?.error || error.message;
-            }
+        try {
+          setLoading(true);
+          const response = await axios.post("/run-workflow", {
+            workflow,
+            repository: repo,
+          });
+          textResults.classList.remove("text-danger");
+          textResults.textContent = JSON.stringify(response.data, null, 2);
+        } catch (error) {
+          console.error("Error running workflow:", error);
+          textResults.classList.add("text-danger");
+          textResults.textContent =
+            "Error: " + error.response?.data?.error || error.message;
+        } finally {
+          setLoading(false);
         }
+      }
 
-        // List GitHub repositories
-        async function listRepositories() {
-            try {
-                const response = await axios.get('/github/repos');
-                const reposList = document.getElementById('reposList');
-                reposList.innerHTML = '';
-                
-                response.data.forEach(repo => {
-                    const item = document.createElement('a');
-                    item.href = repo.html_url;
-                    item.target = '_blank';
-                    item.className = 'list-group-item list-group-item-action';
-                    item.textContent = repo.full_name;
-                    reposList.appendChild(item);
-                });
-            } catch (error) {
-                console.error('Error fetching repositories:', error);
-                document.getElementById('results').textContent = 
-                    'Error: ' + error.response?.data?.error || error.message;
-            }
-        }
+      // Event listeners
+      runWorkflowButton.addEventListener("click", runWorkflow);
+      workflowSelect.addEventListener("change", updateSelections);
+      repoSelect.addEventListener("change", updateSelections);
 
-        // Event listeners
-        document.getElementById('runWorkflow').addEventListener('click', runWorkflow);
-        document.getElementById('listRepos').addEventListener('click', listRepositories);
-
-        // Initialize
-        fetchWorkflows();
+      // Initialize
+      fetchWorkflows();
+      fetchRepositories();
+      updateSelections();
     </script>
-</body>
+  </body>
 </html>

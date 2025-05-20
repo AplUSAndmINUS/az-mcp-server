@@ -139,15 +139,18 @@ app.get('/workflows', (req, res) => {
 
 // Endpoint to run a specific workflow
 app.post('/run-workflow', (req, res) => {
-  const { workflow } = req.body;
+  const { workflow, repository } = req.body;
 
   if (!workflow) {
     return res.status(400).json({ error: 'Please specify a workflow.' });
   }
+  if (!repository) {
+    return res.status(400).json({ error: 'Please specify a repository.' });
+  }
 
-  // Call the Python script with the selected workflow
+  // Call the Python script with the selected workflow and repository
   const options = {
-    args: [workflow],
+    args: [workflow, repository],
   };
 
   PythonShell.run('workflow_handler.py', options, (err, results) => {

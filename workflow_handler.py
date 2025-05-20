@@ -13,7 +13,7 @@ def read_markdown_file(workflow_name):
     except Exception as e:
         return f"Error reading workflow file: {str(e)}"
 
-def handle_workflow(workflow):
+def handle_workflow(workflow, repository=None):
     """Handle the workflow processing."""
     valid_workflows = [
         'acceptance-criteria.md',
@@ -31,6 +31,7 @@ def handle_workflow(workflow):
     content = read_markdown_file(workflow)
     return {
         "workflow": workflow,
+        "repository": repository,
         "content": content,
         "status": "success"
     }
