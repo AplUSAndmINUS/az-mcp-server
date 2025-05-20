@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public'))); // Add this line
 
 // GitHub API Base URL
 const GITHUB_API_BASE_URL = 'https://api.github.com';
