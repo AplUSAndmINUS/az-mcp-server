@@ -1,0 +1,10 @@
+{
+  "jira": {
+    "api_key": "your-jira-api-key",
+    "base_url": "https://your-jira-instance.atlassian.net"
+  },
+  "bitbucket": {
+    "api_key": "your-bitbucket-api-key",
+    "base_url": "https://api.bitbucket.org/2.0"
+  }
+}
