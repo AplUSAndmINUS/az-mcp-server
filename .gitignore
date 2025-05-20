@@ -61,7 +61,24 @@ Pipfile.lock
 
 # dotenv
 .env
-.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.development
+.env.test
+.env.production
+.env.local
+.envrc
+.envrc.local
+.envrc.development
+.envrc.test
+.envrc.production
+.envrc.development.local
+.envrc.test.local
+.envrc.production.local
+.envrc.development.local
+.envrc.test.local
 
 # mypy
 .mypy_cache/
